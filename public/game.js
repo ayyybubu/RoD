@@ -15,6 +15,7 @@ const gameState = {
     phase: 'waiting',       // Game phases: waiting, joining, deciding, revealing, roundEnd, gameEnd
     timer: null,            // Timer for decision phase
     timeRemaining: 0,       // Seconds remaining in current phase
+    treasureValues: [],     // Treasure values for the current game
 };
 
 // Game configuration
@@ -23,6 +24,10 @@ const config = {
     decisionTime: 15,       // Seconds players have to decide continue/exit
     joinTime: 30,           // Seconds for join phase
     trapTypes: ['snake', 'spider', 'lava', 'rockfall', 'poison'],
+    treasureCardCount: 5,   // Number of each treasure card value
+    trapCardCount: 3,       // Number of each trap type
+    minTreasureScale: 0.4,  // Minimum treasure value as a percentage of player count
+    maxTreasureScale: 2.0,  // Maximum treasure value as a multiple of player count
 };
 
 // Sound effects
@@ -52,23 +57,51 @@ const toggleSound = () => {
     document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
 };
 
-// Card types and distribution
+// Card types and distribution - now with dynamic treasure values
 const createDeck = () => {
     const deck = [];
     
-    // Add treasure cards (values 1-5, 5 of each)
-    for (let value = 1; value <= 5; value++) {
-        for (let i = 0; i < 5; i++) {
+    // Calculate the number of players
+    const playerCount = Object.keys(gameState.players).length;
+    
+    // Ensure at least 1 player for calculation purposes
+    const effectivePlayerCount = Math.max(playerCount, 1);
+    
+    // Calculate min and max treasure values based on player count
+    const minTreasureValue = Math.max(1, Math.floor(effectivePlayerCount * config.minTreasureScale));
+    const maxTreasureValue = Math.max(5, Math.floor(effectivePlayerCount * config.maxTreasureScale));
+    
+    // Calculate step size for treasure values
+    const valueRange = maxTreasureValue - minTreasureValue;
+    const step = Math.max(1, Math.floor(valueRange / 4)); // 5 different treasure values
+    
+    // Generate treasure values
+    const treasureValues = [];
+    for (let i = 0; i < 5; i++) {
+        const value = minTreasureValue + (i * step);
+        treasureValues.push(value);
+    }
+    
+    // Log the treasure values for debugging
+    console.log(`Player count: ${effectivePlayerCount}, Treasure values: ${treasureValues.join(', ')}`);
+    
+    // Add treasure cards with scaled values
+    for (let i = 0; i < treasureValues.length; i++) {
+        const value = treasureValues[i];
+        for (let j = 0; j < config.treasureCardCount; j++) {
             deck.push({ type: 'treasure', value });
         }
     }
     
     // Add trap cards (3 of each type)
     for (const trapType of config.trapTypes) {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < config.trapCardCount; i++) {
             deck.push({ type: 'trap', trapType });
         }
     }
+    
+    // Store the treasure values for display
+    gameState.treasureValues = treasureValues;
     
     return shuffleDeck(deck);
 };
@@ -89,10 +122,10 @@ const startGame = () => {
     gameState.isActive = true;
     gameState.currentRound = 1;
     gameState.currentPath = [];
-    gameState.deck = createDeck();
     gameState.revealedTraps = {};
     gameState.treasureOnPath = 0;
     gameState.phase = 'joining';
+    gameState.treasureValues = [];
     
     // Reset player scores for new game if needed
     Object.keys(gameState.players).forEach(player => {
@@ -106,6 +139,8 @@ const startGame = () => {
     // Start join timer
     startTimer(config.joinTime, () => {
         if (Object.keys(gameState.players).length > 0) {
+            // Create the deck after the joining phase to account for player count
+            gameState.deck = createDeck();
             startRound();
         } else {
             gameState.phase = 'waiting';
@@ -136,6 +171,11 @@ const startRound = () => {
     
     // Reveal the first card automatically
     setTimeout(revealNextCard, 1500);
+    
+    // Display treasure values if first round
+    if (gameState.currentRound === 1 && gameState.treasureValues && gameState.treasureValues.length > 0) {
+        displayMessage(`Treasure values for this game: ${gameState.treasureValues.join(', ')} rubies`);
+    }
 };
 
 // Reveal the next card from the deck
@@ -198,7 +238,7 @@ const startDecisionPhase = () => {
     }
     
     gameState.phase = 'deciding';
-    displayMessage(`Time to decide! Type !continue to explore deeper or !exit to leave with your treasures. ${config.decisionTime} seconds to decide...`);
+    displayMessage(`Time to decide! Type !ditch to leave with your treasures or do nothing to continue exploring. ${config.decisionTime} seconds to decide...`);
     
     startTimer(config.decisionTime, () => {
         processDecisions();
@@ -335,31 +375,43 @@ const startTimer = (seconds, callback) => {
     }, 1000);
 };
 
+// Sanitize text to prevent XSS
+const sanitizeText = (text) => {
+    if (!text) return '';
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
 // Process chat commands from Twitch viewers
 const processChatCommand = (username, message) => {
-    const command = message.toLowerCase().trim();
+    // Sanitize inputs
+    const sanitizedUsername = sanitizeText(username);
+    const sanitizedMessage = sanitizeText(message);
+    
+    const command = sanitizedMessage.toLowerCase().trim();
     
     // Join command - only available during joining phase
     if (command === '!join' && gameState.phase === 'joining') {
-        if (!gameState.players[username]) {
-            gameState.players[username] = {
+        if (!gameState.players[sanitizedUsername]) {
+            gameState.players[sanitizedUsername] = {
                 score: 0,
                 inCave: true,
                 roundTreasure: 0
             };
-            displayMessage(`${username} joined the game!`);
+            displayMessage(`${sanitizedUsername} joined the game!`);
             updateUI();
         }
     }
     
-    // Continue and exit commands - only available during deciding phase
-    if (gameState.phase === 'deciding' && gameState.players[username] && gameState.players[username].inCave) {
-        if (command === '!continue') {
-            gameState.players[username].decision = 'continue';
-            displayMessage(`${username} decides to continue deeper!`);
-        } else if (command === '!exit') {
-            gameState.players[username].decision = 'exit';
-            displayMessage(`${username} decides to exit the cave!`);
+    // Ditch command (formerly exit) - only available during deciding phase
+    if (gameState.phase === 'deciding' && gameState.players[sanitizedUsername] && gameState.players[sanitizedUsername].inCave) {
+        if (command === '!ditch') {
+            gameState.players[sanitizedUsername].decision = 'exit';
+            displayMessage(`${sanitizedUsername} decides to leave the cave!`);
         }
     }
 };
@@ -368,7 +420,7 @@ const processChatCommand = (username, message) => {
 const displayMessage = (message) => {
     const gameLog = document.getElementById('game-log');
     const messageElement = document.createElement('div');
-    messageElement.textContent = message;
+    messageElement.textContent = sanitizeText(message); // Sanitize the message
     messageElement.classList.add('log-message');
     gameLog.appendChild(messageElement);
     gameLog.scrollTop = gameLog.scrollHeight;

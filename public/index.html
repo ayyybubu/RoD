@@ -49,8 +49,8 @@
                 <h3>How to Play</h3>
                 <ul>
                     <li>Type <strong>!join</strong> to join the game during the joining phase</li>
-                    <li>When in the cave, type <strong>!continue</strong> to explore deeper</li>
-                    <li>Or type <strong>!exit</strong> to leave with your treasures</li>
+                    <li>Players automatically continue exploring deeper into the cave</li>
+                    <li>Type <strong>!ditch</strong> to leave the cave with your treasures</li>
                     <li>Be careful! If the same trap appears twice, everyone still in the cave loses all treasures</li>
                     <li>The game lasts 5 rounds - player with the most rubies wins!</li>
                 </ul>
@@ -64,11 +64,30 @@
         const socket = io();
         const chatDiv = document.getElementById("chat");
 
+        // Sanitize text to prevent XSS
+        const sanitizeText = (text) => {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
         socket.on("chatMessage", (data) => {
             // Display the message in the chat div
             const messageElement = document.createElement("div");
             messageElement.classList.add("message");
-            messageElement.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
+            
+            // Create username element
+            const usernameElement = document.createElement("strong");
+            usernameElement.textContent = data.user;
+            
+            // Append username and message text safely
+            messageElement.appendChild(usernameElement);
+            messageElement.appendChild(document.createTextNode(": " + data.message));
+            
             chatDiv.appendChild(messageElement);
             
             // Limit the number of messages shown to prevent overflow
