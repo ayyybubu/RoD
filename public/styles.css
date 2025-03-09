@@ -48,11 +48,11 @@ body {
 /* Main Game Area */
 .main-area {
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 3fr 2fr;
     gap: 20px;
     height: 100%;
     overflow: hidden;
-    min-height: 0; /* Important for nested scrolling */
+    min-height: 0;
 }
 
 /* Cave Path */
@@ -60,19 +60,20 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
-    gap: 15px;
-    padding: 20px;
+    gap: 8px;
+    padding: 15px;
     background-color: #1e1e1e;
     border-radius: 10px;
     overflow-y: auto;
     height: 100%;
+    max-height: 60vh;
 }
 
 /* Cards */
 .card {
-    width: 120px;
-    height: 180px;
-    margin: 10px;
+    width: 110px;
+    height: 165px;
+    margin: 5px;
     border-radius: 10px;
     display: flex;
     justify-content: center;
@@ -96,47 +97,88 @@ body {
     align-items: center;
     justify-content: space-between;
     height: 100%;
-    padding: 10px;
+    width: 100%;
+    padding: 10px 5px;
+    position: relative;
 }
 
 .card-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     text-align: center;
     margin-bottom: 5px;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 4px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
 .card-image {
     font-size: 36px;
-    margin: 10px 0;
+    margin: 5px 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 60px;
+    height: 50px;
 }
 
 .card-value {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: bold;
-    margin-top: 10px;
+    margin-top: 5px;
+    padding: 5px 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    min-width: 80px;
+    text-align: center;
 }
 
 /* Treasure Cards */
 .treasure-card {
     background-color: #4a3c00;
     color: #ffd700;
+    background-image: linear-gradient(to bottom, #5a4c10, #4a3c00);
 }
 
 /* Trap Cards */
-.trap-card {
-    background-color: #4a0000;
-    color: #ff6b6b;
+.trap-snake {
+    background-color: #4a6c00;
+    color: #b4ff6b;
+    background-image: linear-gradient(to bottom, #5a7c10, #4a6c00);
+}
+
+.trap-spider {
+    background-color: #4a0066;
+    color: #d16bff;
+    background-image: linear-gradient(to bottom, #5a1076, #4a0066);
+}
+
+.trap-lava {
+    background-color: #8c3500;
+    color: #ffb36b;
+    background-image: linear-gradient(to bottom, #9c4510, #8c3500);
+}
+
+.trap-rockfall {
+    background-color: #4a4a4a;
+    color: #d1d1d1;
+    background-image: linear-gradient(to bottom, #5a5a5a, #4a4a4a);
+}
+
+.trap-poison {
+    background-color: #004a4a;
+    color: #6bffff;
+    background-image: linear-gradient(to bottom, #105a5a, #004a4a);
 }
 
 /* Relic Cards */
 .relic-card {
     background-color: #003366;
     color: #66ccff;
+    background-image: linear-gradient(to bottom, #104376, #003366);
 }
 
 /* Controls Area */
@@ -165,13 +207,25 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100%;
+    max-height: calc(40vh - 150px);
 }
 
 .game-message {
-    margin-top: 10px;
+    margin-bottom: 15px;
     line-height: 1.5;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+#game-log {
     flex-grow: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+    height: calc(100% - 80px);
 }
 
 /* Buttons */
@@ -234,10 +288,11 @@ button:disabled {
 /* Bottom Area */
 .bottom-area {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
-    height: 250px;
-    min-height: 250px;
+    height: 40vh;
+    min-height: 300px;
+    max-height: 500px;
 }
 
 .player-list, .game-log {
@@ -251,35 +306,45 @@ button:disabled {
 }
 
 #players-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
     overflow-y: auto;
     margin-top: 10px;
     height: 100%;
     flex-grow: 1;
+    padding: 5px;
 }
 
 .player {
     background-color: #2a2a2a;
-    border-radius: 5px;
-    padding: 10px;
-    width: calc(50% - 5px);
+    border-radius: 8px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
+    border-left: 4px solid #555;
+    transition: transform 0.2s;
+}
+
+.player:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .player-name {
     font-weight: bold;
+    font-size: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    color: #fff;
 }
 
 .player-status {
-    font-size: 12px;
+    font-size: 14px;
     color: #66cc66;
+    margin-bottom: 5px;
 }
 
 .player-status.exited {
@@ -292,7 +357,12 @@ button:disabled {
 
 .player-treasure {
     margin-top: 5px;
-    font-size: 14px;
+    font-size: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 5px 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
 }
 
 /* Log */
@@ -400,7 +470,15 @@ button:disabled {
 /* Responsive adjustments */
 @media (max-width: 1200px) {
     .main-area {
-        grid-template-columns: 1fr 250px;
+        grid-template-columns: 2fr 1fr;
+    }
+    
+    .cave-path {
+        max-height: 50vh;
+    }
+    
+    .bottom-area {
+        height: 45vh;
     }
 }
 
@@ -416,12 +494,16 @@ button:disabled {
         grid-template-columns: 1fr;
     }
     
-    .bottom-area {
-        grid-template-columns: 1fr;
-        height: auto;
+    .cave-path {
+        max-height: 40vh;
     }
     
-    .player-list, .game-log {
-        height: 200px;
+    .bottom-area {
+        height: auto;
+        max-height: 40vh;
+    }
+    
+    .player-list {
+        height: 100%;
     }
 }

@@ -36,6 +36,8 @@
                 <div class="game-status">
                     <h3>Game Status</h3>
                     <div id="game-message" class="game-message">Waiting to start game...</div>
+                    <h3>Game Log</h3>
+                    <div id="game-log"></div>
                 </div>
             </div>
         </div>
@@ -44,11 +46,6 @@
             <div class="player-list">
                 <h3>Explorers (<span id="active-players">0</span> active)</h3>
                 <div id="players-container"></div>
-            </div>
-
-            <div class="game-log">
-                <h3>Game Log</h3>
-                <div id="log-container"></div>
             </div>
         </div>
     </div>
@@ -69,7 +66,8 @@
             <div class="player-name"></div>
             <div class="player-status">In Cave</div>
             <div class="player-treasure">
-                <span class="player-holding">0</span> / <span class="player-chest">0</span>
+                <span>Holding: <span class="player-holding">0</span></span>
+                <span>Total: <span class="player-chest">0</span></span>
             </div>
         </div>
     </template>

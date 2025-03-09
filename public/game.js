@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elementsMap.timerText = document.getElementById('timer-text');
     elementsMap.cavePath = document.getElementById('cave-path');
     elementsMap.playersContainer = document.getElementById('players-container');
-    elementsMap.logContainer = document.getElementById('log-container');
+    elementsMap.gameLog = document.getElementById('game-log');
     elementsMap.gameMessage = document.getElementById('game-message');
     elementsMap.currentRound = document.getElementById('current-round');
     elementsMap.playerCount = document.getElementById('player-count');
@@ -182,7 +182,7 @@ function startGame() {
     if (elementsMap.activePlayers) elementsMap.activePlayers.textContent = '0';
     if (elementsMap.cavePath) elementsMap.cavePath.innerHTML = '';
     if (elementsMap.playersContainer) elementsMap.playersContainer.innerHTML = '';
-    if (elementsMap.logContainer) elementsMap.logContainer.innerHTML = '';
+    if (elementsMap.gameLog) elementsMap.gameLog.innerHTML = '';
     
     // Disable controls during joining phase
     if (elementsMap.startGameBtn) elementsMap.startGameBtn.disabled = true;
@@ -314,6 +314,55 @@ function shuffleDeck(deck) {
 }
 
 /**
+ * Reveal the first card, ensuring it's never a trap
+ */
+function revealFirstCard() {
+    console.log("Revealing first card (guaranteed not to be a trap)...");
+    
+    if (gameState.deck.length === 0) {
+        addLogEntry("The deck is empty!", "warning");
+        startNextRound();
+        return;
+    }
+    
+    // Find the first non-trap card in the deck
+    let cardIndex = -1;
+    for (let i = 0; i < gameState.deck.length; i++) {
+        if (gameState.deck[i].type !== 'trap') {
+            cardIndex = i;
+            break;
+        }
+    }
+    
+    // If no non-trap card found, create a treasure card
+    let card;
+    if (cardIndex === -1) {
+        console.log("No non-trap cards found in deck, creating a treasure card");
+        const playerCount = Object.keys(gameState.players).length;
+        const treasureValue = Math.max(5, playerCount * 2); // Decent starting treasure
+        card = { type: 'treasure', value: treasureValue };
+    } else {
+        // Remove the non-trap card from the deck
+        card = gameState.deck.splice(cardIndex, 1)[0];
+    }
+    
+    // Add the card to the path
+    gameState.currentPath.push(card);
+    
+    // Create and add the card element to the path
+    const cardElement = createCardElement(card);
+    if (elementsMap.cavePath) {
+        elementsMap.cavePath.appendChild(cardElement);
+    }
+    
+    // Process the card effects
+    processCardEffects(card);
+    
+    // Start decision phase automatically after revealing a card
+    startDecisionPhase();
+}
+
+/**
  * Reveal the next card from the deck
  */
 function revealNextCard() {
@@ -341,6 +390,12 @@ function revealNextCard() {
         if (gameState.currentPath.length === 0) {
             elementsMap.revealCardBtn.textContent = 'Reveal Next Card';
         }
+    }
+    
+    // If this is the first card, use revealFirstCard to ensure it's not a trap
+    if (gameState.currentPath.length === 0) {
+        revealFirstCard();
+        return;
     }
     
     // Reveal the next card
@@ -377,7 +432,7 @@ function processCardEffects(card) {
             const remainingTreasure = card.value % playersCount;
             
             // Update the card value to show only the remaining treasure
-            card.originalValue = card.value;
+            card.originalValue = card.value; // Store original value for display purposes
             card.value = remainingTreasure;
             
             // Add treasure to each player in the cave
@@ -390,6 +445,9 @@ function processCardEffects(card) {
             gameState.treasureOnPath = gameState.currentPath.reduce((total, c) => {
                 return total + (c.type === 'treasure' ? c.value : 0);
             }, 0);
+            
+            // Update the path display to show new values
+            updatePathDisplay();
             
             addLogEntry(`Revealed: ${card.originalValue} rubies! Each player collects ${treasurePerPlayer}, leaving ${remainingTreasure} on the card.`, 'success');
         } else {
@@ -406,11 +464,16 @@ function processCardEffects(card) {
         if (gameState.revealedTraps[card.trapType] >= 2) {
             addLogEntry(`DANGER! A second ${card.trapType} trap appears!`, 'danger');
             
-            // Activate the trap after a short delay
-            setTimeout(() => {
-                handleTrapSpring(card.trapType);
-            }, 1500);
-            return; // Exit early as trap handling will take over
+            // First, give players a chance to make a decision
+            updateGameMessage(`DANGER! A second ${card.trapType} trap appears! You have 15 seconds to type !roach to escape before the trap springs!`);
+            
+            // Start decision phase to give players a chance to escape
+            startDecisionPhase();
+            
+            // Activate the trap after the decision phase
+            gameState.pendingTrapType = card.trapType;
+            
+            return; // Exit early as trap handling will happen after decision phase
         } else {
             addLogEntry(`Revealed: A ${card.trapType} trap! Be careful...`, 'warning');
         }
@@ -522,32 +585,30 @@ function processDecisions() {
         gameState.currentPath.forEach(card => {
             if (card.type === 'treasure' || card.type === 'relic') {
                 card.value = 0;
-                
-                // Update card display
-                const cardElement = elementsMap.cavePath.children[gameState.currentPath.indexOf(card)];
-                const valueElement = cardElement.querySelector('.card-value');
-                if (valueElement) {
-                    valueElement.textContent = '0';
-                }
             }
         });
         
-        // Display message about players leaving
+        // Update the path display to show new values
+        updatePathDisplay();
+        
+        // Log player exits to console only, not to game log
         if (exitingPlayers.length === 1) {
             const player = exitingPlayers[0];
-            addLogEntry(`${player.username} left the cave with ${player.chest} rubies!`, 'success');
+            console.log(`[PLAYER EXIT] ${player.username} left the cave with ${player.chest} rubies!`);
         } else {
             const treasureMessages = exitingPlayers.map(player => 
                 `${player.username} (${player.chest})`
             ).join(', ');
-            addLogEntry(`Players left the cave with their treasures: ${treasureMessages}`, 'success');
+            console.log(`[PLAYER EXITS] Players left the cave with their treasures: ${treasureMessages}`);
         }
         
         // Update game message
         updateGameMessage(`${exitingPlayers.length} player(s) left the cave.`);
         
         // Update active players count
-        elementsMap.activePlayers.textContent = Object.values(gameState.players).filter(p => p.inCave).length;
+        if (elementsMap.activePlayers) {
+            elementsMap.activePlayers.textContent = Object.values(gameState.players).filter(p => p.inCave).length;
+        }
     }
     
     // Reset decisions for continuing players
@@ -556,6 +617,18 @@ function processDecisions() {
             delete player.decision;
         }
     });
+    
+    // Check if there's a pending trap to activate
+    if (gameState.pendingTrapType) {
+        const trapType = gameState.pendingTrapType;
+        delete gameState.pendingTrapType;
+        
+        // Activate the trap after a short delay to allow UI to update
+        setTimeout(() => {
+            handleTrapSpring(trapType);
+        }, 1000);
+        return;
+    }
     
     // Check if anyone is still in the cave
     const remainingPlayers = Object.values(gameState.players).filter(p => p.inCave);
@@ -577,9 +650,23 @@ function handleTrapSpring(trapType) {
     addLogEntry(`The ${trapType} trap is sprung! All players in the cave lose their treasures!`, 'danger');
     updateGameMessage(`DANGER! The ${trapType} trap is sprung!`);
     
-    // All players in the cave lose their treasures
+    // First, process any pending exit decisions to let players escape safely
+    const exitingPlayers = Object.values(gameState.players).filter(p => 
+        p.decision === 'exit' && p.inCave
+    );
+    
+    if (exitingPlayers.length > 0) {
+        console.log(`${exitingPlayers.length} players are escaping just before the trap springs!`);
+        
+        // Process decisions to let these players escape safely
+        processDecisions();
+    }
+    
+    // Now handle the trap for remaining players
+    // All players still in the cave lose their treasures
     Object.values(gameState.players).forEach(player => {
         if (player.inCave) {
+            console.log(`${player.username} loses ${player.holding} treasure due to trap!`);
             player.holding = 0;
             player.status = 'out';
             player.inCave = false;
@@ -623,6 +710,8 @@ function startNextRound() {
     if (elementsMap.cavePath) elementsMap.cavePath.innerHTML = '';
     
     // Create a new deck for each round to ensure traps can appear again
+    // and maintain the correct ratio between trap and treasure cards
+    gameState.treasureValues = []; // Reset treasure values for the new round
     gameState.deck = createDeck();
     console.log(`Created new deck with ${gameState.deck.length} cards for round ${gameState.currentRound}`);
     
@@ -783,14 +872,41 @@ function createCardElement(card) {
     const valueElement = cardElement.querySelector('.card-value');
     
     if (card.type === 'treasure') {
-        if (titleElement) titleElement.textContent = 'Treasure';
-        if (valueElement) valueElement.textContent = card.value;
+        if (titleElement) {
+            // Show original value if available, but keep it short
+            if (card.hasOwnProperty('originalValue')) {
+                titleElement.textContent = `Treasure (${card.originalValue})`;
+                // Add title attribute for hover tooltip with full text
+                titleElement.title = `Treasure (${card.originalValue})`;
+            } else {
+                titleElement.textContent = 'Treasure';
+                titleElement.title = 'Treasure';
+            }
+        }
+        
+        if (valueElement) {
+            // Show remaining gold
+            valueElement.textContent = `${card.value} gold`;
+        }
+        
+        // Store original and current values as data attributes for animations
+        cardElement.dataset.originalValue = card.originalValue || card.value;
+        cardElement.dataset.currentValue = card.value;
     } else if (card.type === 'trap') {
-        if (titleElement) titleElement.textContent = `${card.trapType.charAt(0).toUpperCase() + card.trapType.slice(1)} Trap`;
+        if (titleElement) {
+            const trapName = `${card.trapType.charAt(0).toUpperCase() + card.trapType.slice(1)} Trap`;
+            titleElement.textContent = trapName;
+            titleElement.title = trapName; // Add title attribute for hover tooltip
+        }
         cardElement.classList.add(`trap-${card.trapType}`);
     } else if (card.type === 'relic') {
-        if (titleElement) titleElement.textContent = 'Relic';
-        if (valueElement) valueElement.textContent = card.value;
+        if (titleElement) {
+            titleElement.textContent = 'Relic';
+            titleElement.title = 'Relic';
+        }
+        if (valueElement) {
+            valueElement.textContent = `${card.value} gold`;
+        }
     }
     
     return cardElement;
@@ -884,8 +1000,8 @@ function updatePlayerElement(player) {
 function addLogEntry(message, className = '') {
     console.log(`[GAME LOG] ${message}`);
     
-    if (!elementsMap.logContainer) {
-        console.error("Log container not found!");
+    if (!elementsMap.gameLog) {
+        console.error("Game log element not found!");
         return;
     }
     
@@ -893,8 +1009,13 @@ function addLogEntry(message, className = '') {
     logEntry.className = `log-entry ${className}`;
     logEntry.textContent = message;
     
-    elementsMap.logContainer.appendChild(logEntry);
-    elementsMap.logContainer.scrollTop = elementsMap.logContainer.scrollHeight;
+    elementsMap.gameLog.appendChild(logEntry);
+    elementsMap.gameLog.scrollTop = elementsMap.gameLog.scrollHeight;
+    
+    // Limit the number of log entries to prevent performance issues
+    while (elementsMap.gameLog.children.length > 50) {
+        elementsMap.gameLog.removeChild(elementsMap.gameLog.firstChild);
+    }
 }
 
 /**
@@ -968,4 +1089,41 @@ function getCardDescription(card) {
         return `Relic (${card.value} rubies)`;
     }
     return 'Unknown card';
+}
+
+/**
+ * Update the path display with current cards and treasure values
+ */
+function updatePathDisplay() {
+    if (!elementsMap.cavePath) {
+        console.error("Cave path element not found!");
+        return;
+    }
+    
+    // Get all card elements
+    const cardElements = elementsMap.cavePath.querySelectorAll('.card');
+    
+    // Update each card's value display
+    gameState.currentPath.forEach((card, index) => {
+        if (index < cardElements.length) {
+            const cardElement = cardElements[index];
+            
+            if (card.type === 'treasure') {
+                // Update title with original value if available
+                const titleElement = cardElement.querySelector('.card-title');
+                if (titleElement && card.hasOwnProperty('originalValue')) {
+                    titleElement.textContent = `Treasure (${card.originalValue})`;
+                }
+                
+                // Update value display
+                const valueElement = cardElement.querySelector('.card-value');
+                if (valueElement) {
+                    valueElement.textContent = `${card.value} gold`;
+                }
+                
+                // Update data attributes
+                cardElement.dataset.currentValue = card.value;
+            }
+        }
+    });
 }
