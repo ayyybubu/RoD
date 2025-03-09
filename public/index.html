@@ -6,6 +6,7 @@
     <title>Diamant - Twitch Integration Game</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="forsen-lines.css">
 </head>
 <body>
     <div class="game-container">
@@ -48,6 +49,15 @@
                 <div id="players-container"></div>
             </div>
         </div>
+    </div>
+
+    <!-- Random Lines -->
+    <div class="draggable">
+        <button id="randomLineButton" class="line-button">
+            <img src="https://cdn.7tv.app/emote/01J4QEM8QG0008DAM5HZ50H55C/4x.webp" alt="forsen" />
+        </button>
+        <p id="randomLineContainer"></p>
+        <script src="forsen-lines.js"></script>
     </div>
 
     <!-- Templates -->
