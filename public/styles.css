@@ -1,74 +1,79 @@
-/* Diamant Game Styles */
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f0f0;
+/* Basic Reset */
+* {
     margin: 0;
-    padding: 20px;
-    color: #333;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    gap: 20px;
-}
-
-h1, h2, h3 {
-    color: #2c3e50;
-}
-
-/* Game board section */
-.game-board {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.game-info {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.game-info div {
-    background-color: #f8f9fa;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-/* Cave path display */
-.path-container {
-    margin: 20px 0;
-    min-height: 150px;
-    background-color: #f8f8f8;
-    border-radius: 8px;
-    padding: 15px;
-    border: 1px dashed #ccc;
-}
-
-#path-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.card {
-    width: 80px;
-    height: 120px;
-    border-radius: 8px;
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.game-container {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    width: 100%;
+    max-width: 1200px;
+    height: 100vh;
+    max-height: 900px;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* Header Section */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.round-info {
+    display: flex;
+    gap: 20px;
+    font-size: 18px;
+}
+
+/* Main Game Area */
+.main-area {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Cave Path */
+.cave-path {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Cards */
+.card {
+    width: 120px;
+    height: 180px;
+    background-color: #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     animation: cardReveal 0.5s ease-out;
 }
 
@@ -76,293 +81,246 @@ h1, h2, h3 {
     transform: translateY(-5px);
 }
 
-.treasure-card {
-    background-color: #ffd700;
-    color: #7d6608;
-    border: 2px solid #e6c200;
-    animation: cardReveal 0.5s ease-out, treasurePulse 2s infinite;
-}
-
-.trap-card {
-    background-color: #e74c3c;
-    color: white;
-    border: 2px solid #c0392b;
-    animation: cardReveal 0.5s ease-out;
-}
-
-.trap-snake {
-    background-color: #27ae60;
-}
-
-.trap-spider {
-    background-color: #8e44ad;
-}
-
-.trap-lava {
-    background-color: #e67e22;
-}
-
-.trap-rockfall {
-    background-color: #7f8c8d;
-}
-
-.trap-poison {
-    background-color: #2ecc71;
-}
-
-.trap-card.danger {
-    animation: cardReveal 0.5s ease-out, trapShake 0.5s ease-in-out;
-}
-
-/* Game controls */
-.game-controls {
+.card-content {
     display: flex;
-    gap: 10px;
-    margin: 20px 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 10px;
 }
 
+.card-title {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.card-image {
+    font-size: 36px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+}
+
+.card-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Treasure Cards */
+.treasure-card {
+    background-color: #4a3c00;
+    color: #ffd700;
+}
+
+/* Trap Cards */
+.trap-card {
+    background-color: #4a0000;
+    color: #ff6b6b;
+}
+
+/* Relic Cards */
+.relic-card {
+    background-color: #003366;
+    color: #66ccff;
+}
+
+/* Controls Area */
+.controls-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.streamer-controls {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.game-status {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.game-message {
+    margin-top: 10px;
+    line-height: 1.5;
+}
+
+/* Buttons */
 button {
     padding: 10px 15px;
     border: none;
-    border-radius: 4px;
-    background-color: #3498db;
-    color: white;
-    font-weight: bold;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
-button:hover {
-    background-color: #2980b9;
-}
-
 button:disabled {
-    background-color: #bdc3c7;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* Game log */
-.game-log-container {
-    margin-top: 20px;
-    height: 200px;
-    overflow-y: auto;
-    background-color: #2c3e50;
-    color: #ecf0f1;
-    border-radius: 4px;
-    padding: 10px;
+.primary-btn {
+    background-color: #0066cc;
+    font-weight: bold;
 }
 
-#game-log {
+.primary-btn:hover:not(:disabled) {
+    background-color: #0055aa;
+}
+
+/* Timer */
+.timer-container {
+    margin-top: 10px;
+    height: 20px;
+    background-color: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    background-color: #0066cc;
+    transform-origin: left;
+    transition: transform 1s linear;
+}
+
+#timer-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 0 2px black;
+}
+
+/* Bottom Area */
+.bottom-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.player-list, .game-log {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    height: 250px;
+}
+
+#players-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    overflow-y: auto;
+    margin-top: 10px;
+    height: 100%;
+}
+
+.player {
+    background-color: #2a2a2a;
+    border-radius: 5px;
+    padding: 10px;
+    width: calc(50% - 5px);
     display: flex;
     flex-direction: column;
 }
 
-.log-message {
-    padding: 5px 0;
-    border-bottom: 1px solid #34495e;
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* Players sidebar */
-.players-sidebar {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.player {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #3498db;
-    animation: playerJoin 0.3s ease-out;
-}
-
-.player.in-cave {
-    border-left: 4px solid #e74c3c;
-    background-color: #ffeaea;
-}
-
 .player-name {
     font-weight: bold;
-}
-
-.player-score {
-    color: #f39c12;
-    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px;
 }
 
 .player-status {
-    font-size: 0.8em;
-    padding: 2px 6px;
-    border-radius: 10px;
-    background-color: #2ecc71;
-    color: white;
+    font-size: 12px;
+    color: #66cc66;
 }
 
-.in-cave .player-status {
-    background-color: #e74c3c;
+.player-status.exited {
+    color: #66ccff;
 }
 
-/* Twitch Chat */
-.twitch-chat {
-    margin-top: 20px;
+.player-status.out {
+    color: #ff6b6b;
 }
 
-#chat {
-    height: 300px;
+.player-treasure {
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+/* Log */
+#log-container {
     overflow-y: auto;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    padding: 10px;
-    border: 1px solid #ddd;
-}
-
-.message {
-    padding: 5px;
-    border-bottom: 1px solid #eee;
-    font-size: 0.9em;
-}
-
-.message strong {
-    color: #3498db;
-}
-
-/* Sound toggle */
-.sound-toggle {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background-color: #f8f9fa;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    margin-top: 10px;
+    height: 100%;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
 }
 
-.sound-toggle i {
-    font-size: 20px;
-    color: #3498db;
+.log-entry {
+    padding: 5px;
+    border-bottom: 1px solid #333;
+    font-size: 14px;
+    line-height: 1.4;
 }
 
-/* Game instructions */
-.game-instructions {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #3498db;
+.log-entry:last-child {
+    border-bottom: none;
 }
 
-.game-instructions h3 {
-    margin-top: 0;
+.highlight {
+    color: #ffcc00;
 }
 
-.game-instructions ul {
-    padding-left: 20px;
+.warning {
+    color: #ff9900;
 }
 
-.game-instructions li {
-    margin-bottom: 5px;
+.danger {
+    color: #ff6b6b;
 }
 
-/* Animations */
+.success {
+    color: #66cc66;
+}
+
 @keyframes cardReveal {
     0% {
-        transform: scale(0.1) rotate(20deg);
+        transform: scale(0) rotate(-10deg);
         opacity: 0;
+    }
+    70% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 1;
     }
     100% {
         transform: scale(1) rotate(0);
-        opacity: 1;
     }
 }
-
-@keyframes treasurePulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes trapShake {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    10%, 30%, 50%, 70%, 90% {
-        transform: translateX(-5px);
-    }
-    20%, 40%, 60%, 80% {
-        transform: translateX(5px);
-    }
-}
-
-@keyframes playerJoin {
-    0% {
-        transform: translateX(-20px);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Timer animation */
-#timer-display {
-    position: relative;
-}
-
-#timer-display.urgent {
-    color: #e74c3c;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
-    
-    .card {
-        width: 60px;
-        height: 90px;
-        font-size: 18px;
-    }
-} 

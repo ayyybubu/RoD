@@ -3,98 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamant - Twitch Chat Game</title>
+    <title>Diamant - Twitch Integration Game</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="game-board">
-            <h1>Diamant (Diamond) Game</h1>
-            
-            <div class="game-info">
-                <div id="game-phase">Waiting</div>
-                <div id="round-display">Not Active</div>
-                <div id="timer-display"></div>
-                <div id="treasure-display">Treasure on path: 0</div>
-            </div>
-            
-            <div class="path-container">
-                <h3>Cave Path</h3>
-                <div id="path-display"></div>
-            </div>
-            
-            <div class="game-controls">
-                <button id="start-game-btn">Start New Game</button>
-                <button id="next-card-btn" disabled>Reveal Next Card</button>
-                <button id="start-decision-btn" disabled>Start Decision Phase</button>
-            </div>
-            
-            <div class="game-log-container">
-                <h3>Game Log</h3>
-                <div id="game-log"></div>
+    <div class="game-container">
+        <div class="header">
+            <h1>Diamant</h1>
+            <div class="round-info">
+                <span>Round: <span id="current-round">1</span>/5</span>
+                <span>Players: <span id="player-count">0</span></span>
             </div>
         </div>
-        
-        <div class="players-sidebar">
-            <h2>Players</h2>
-            <div id="players-list"></div>
-            
-            <div class="twitch-chat">
-                <h3>Twitch Chat</h3>
-                <div id="chat"></div>
+
+        <div class="main-area">
+            <div class="cave-path" id="cave-path">
+                <!-- Cards will be added here dynamically -->
             </div>
-            
-            <div class="game-instructions">
-                <h3>How to Play</h3>
-                <ul>
-                    <li>Type <strong>!join</strong> to join the game during the joining phase</li>
-                    <li>Players automatically continue exploring deeper into the cave</li>
-                    <li>Type <strong>!ditch</strong> to leave the cave with your treasures</li>
-                    <li>Be careful! If the same trap appears twice, everyone still in the cave loses all treasures</li>
-                    <li>The game lasts 5 rounds - player with the most rubies wins!</li>
-                </ul>
+
+            <div class="controls-area">
+                <div class="streamer-controls">
+                    <h3>Game Controls</h3>
+                    <button id="start-game" class="primary-btn">Start New Game</button>
+                    <button id="reveal-card" class="primary-btn" disabled>Reveal Next Card</button>
+                    <button id="start-decision" class="primary-btn" disabled>Start Decision Phase</button>
+                    <div class="timer-container">
+                        <div id="timer-bar" class="timer-bar"></div>
+                        <span id="timer-text">30s</span>
+                    </div>
+                </div>
+
+                <div class="game-status">
+                    <h3>Game Status</h3>
+                    <div id="game-message" class="game-message">Waiting to start game...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-area">
+            <div class="player-list">
+                <h3>Explorers (<span id="active-players">0</span> active)</h3>
+                <div id="players-container"></div>
+            </div>
+
+            <div class="game-log">
+                <h3>Game Log</h3>
+                <div id="log-container"></div>
             </div>
         </div>
     </div>
-    
+
+    <!-- Templates -->
+    <template id="card-template">
+        <div class="card">
+            <div class="card-content">
+                <div class="card-title"></div>
+                <div class="card-image"></div>
+                <div class="card-value"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="player-template">
+        <div class="player">
+            <div class="player-name"></div>
+            <div class="player-status">In Cave</div>
+            <div class="player-treasure">
+                <span class="player-holding">0</span> / <span class="player-chest">0</span>
+            </div>
+        </div>
+    </template>
+
     <script src="game.js"></script>
-    <script>
-        // Keep the existing Twitch chat integration
-        const socket = io();
-        const chatDiv = document.getElementById("chat");
-
-        // Sanitize text to prevent XSS
-        const sanitizeText = (text) => {
-            if (!text) return '';
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        };
-
-        socket.on("chatMessage", (data) => {
-            // Display the message in the chat div
-            const messageElement = document.createElement("div");
-            messageElement.classList.add("message");
-            
-            // Create username element
-            const usernameElement = document.createElement("strong");
-            usernameElement.textContent = data.user;
-            
-            // Append username and message text safely
-            messageElement.appendChild(usernameElement);
-            messageElement.appendChild(document.createTextNode(": " + data.message));
-            
-            chatDiv.appendChild(messageElement);
-            
-            // Limit the number of messages shown to prevent overflow
-            while (chatDiv.children.length > 50) {
-                chatDiv.removeChild(chatDiv.firstChild);
-            }
-        });
-    </script>
 </body>
 </html>

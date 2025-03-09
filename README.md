@@ -17,17 +17,25 @@ Diamant is a push-your-luck cave exploration game where players explore a cave o
 - **Streamer Controls**: Simple controls for the streamer to manage the game
 - **Security**: Input sanitization to prevent XSS attacks
 - **Dynamic Balancing**: Treasure values scale based on the number of players
+- **Player Limit Options**: Choose between unlimited players or set a specific player cap
 
 ## Game Mechanics
 
 - The game consists of 5 rounds of cave exploration
 - Players automatically continue exploring unless they choose to leave
+- The first card revealed in each round is always a treasure card (never a trap)
 - Treasure values dynamically scale based on player count:
   - Minimum treasure value = 40% of player count (at least 1)
   - Maximum treasure value = 2x player count (at least 5)
   - Values are distributed evenly between min and max
-- When identical traps appear twice, everyone still in the cave loses their treasures
-- Treasures are divided equally among players who exit at the same time
+- **Treasure Collection System**:
+  - When a treasure card is revealed, its value is immediately divided among players in the cave
+  - Each player gets an equal share (rounded down), and any remainder stays on the card
+  - For example, if 3 players find 10 treasure, each player gets 3 and 1 remains on the card
+  - When players leave the cave (roach), they keep their collected treasure plus a share of any remaining treasure on the path
+  - If multiple players leave at once, they divide the remaining treasure equally
+  - Cards show both the original treasure value and the current remaining value
+- When identical traps appear twice, everyone still in the cave loses all treasures collected in that round
 
 ## How to Play
 
@@ -35,17 +43,20 @@ Diamant is a push-your-luck cave exploration game where players explore a cave o
 
 1. Type `!join` in the Twitch chat during the joining phase to enter the game
 2. You will automatically continue exploring deeper into the cave
-3. Type `!ditch` to leave the cave with your treasures
+3. Type `!roach` to leave the cave with your treasures
 4. If the same trap appears twice, everyone still in the cave loses all treasures collected in that round
 5. The game lasts 5 rounds - the player with the most rubies at the end wins!
 
 ### For Streamers
 
 1. Click "Start New Game" to begin a new game session
-2. The game will automatically handle the joining phase and start the first round
-3. Use "Reveal Next Card" to manually reveal the next card (optional)
-4. Use "Start Decision Phase" to manually start a decision phase (optional)
-5. The game will automatically progress through rounds and end after 5 rounds
+2. Choose whether to allow unlimited players or set a specific player limit
+3. The game will automatically handle the joining phase and start the first round
+4. Use "Force Start Game" to skip the joining timer and start immediately (optional)
+5. Use "Reveal Next Card" to manually reveal the next card (optional)
+6. Use "Start Decision Phase" to manually start a decision phase (optional)
+7. Use "Force End Decisions" to skip the decision timer and process decisions immediately (optional)
+8. The game will automatically progress through rounds and end after 5 rounds
 
 ## Setup
 
