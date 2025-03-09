@@ -1,32 +1,81 @@
 <!DOCTYPE html>
- <html lang="en">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Twitch Chat</title>
-     <script src="/socket.io/socket.io.js"></script>
-     <style>
-         body { font-family: Arial, sans-serif; }
-         #chat { max-width: 500px; margin: auto; padding: 10px; border: 1px solid #ccc; }
-         .message { padding: 5px; border-bottom: 1px solid #ddd; }
-     </style>
- </head>
- <body>
- 
-     <h2>Twitch Chat</h2>
-     <div id="chat"></div>
- 
-     <script>
-         const socket = io();
-         const chatDiv = document.getElementById("chat");
- 
-         socket.on("chatMessage", (data) => {
-             const messageElement = document.createElement("div");
-             messageElement.classList.add("message");
-             messageElement.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
-             chatDiv.appendChild(messageElement);
-         });
-     </script>
- 
- </body>
- </html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diamant - Twitch Chat Game</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-board">
+            <h1>Diamant (Diamond) Game</h1>
+            
+            <div class="game-info">
+                <div id="game-phase">Waiting</div>
+                <div id="round-display">Not Active</div>
+                <div id="timer-display"></div>
+                <div id="treasure-display">Treasure on path: 0</div>
+            </div>
+            
+            <div class="path-container">
+                <h3>Cave Path</h3>
+                <div id="path-display"></div>
+            </div>
+            
+            <div class="game-controls">
+                <button id="start-game-btn">Start New Game</button>
+                <button id="next-card-btn" disabled>Reveal Next Card</button>
+                <button id="start-decision-btn" disabled>Start Decision Phase</button>
+            </div>
+            
+            <div class="game-log-container">
+                <h3>Game Log</h3>
+                <div id="game-log"></div>
+            </div>
+        </div>
+        
+        <div class="players-sidebar">
+            <h2>Players</h2>
+            <div id="players-list"></div>
+            
+            <div class="twitch-chat">
+                <h3>Twitch Chat</h3>
+                <div id="chat"></div>
+            </div>
+            
+            <div class="game-instructions">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Type <strong>!join</strong> to join the game during the joining phase</li>
+                    <li>When in the cave, type <strong>!continue</strong> to explore deeper</li>
+                    <li>Or type <strong>!exit</strong> to leave with your treasures</li>
+                    <li>Be careful! If the same trap appears twice, everyone still in the cave loses all treasures</li>
+                    <li>The game lasts 5 rounds - player with the most rubies wins!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+    <script>
+        // Keep the existing Twitch chat integration
+        const socket = io();
+        const chatDiv = document.getElementById("chat");
+
+        socket.on("chatMessage", (data) => {
+            // Display the message in the chat div
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message");
+            messageElement.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
+            chatDiv.appendChild(messageElement);
+            
+            // Limit the number of messages shown to prevent overflow
+            while (chatDiv.children.length > 50) {
+                chatDiv.removeChild(chatDiv.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>
