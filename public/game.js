@@ -3,8 +3,8 @@ const config = {
     joinTime: 30,          // Seconds for joining phase
     decisionTime: 15,      // Seconds for decision phase
     maxRounds: 5,          // Number of rounds in a game
-    minTreasureScale: 0.4, // Minimum treasure value as a percentage of player count
-    maxTreasureScale: 2.0, // Maximum treasure value as a multiple of player count
+    minTreasureScale: 1.0, // Minimum treasure value as a percentage of player count (100%)
+    maxTreasureScale: 4.0, // Maximum treasure value as a multiple of player count (400%)
     roundBreakTime: 5,     // Seconds between rounds
 };
 
@@ -25,32 +25,47 @@ const gameState = {
     playerLimit: 0,        // 0 means no limit
 };
 
-// DOM elements map for quick access
-const elementsMap = {
-    startGameBtn: document.getElementById('start-game'),
-    revealCardBtn: document.getElementById('reveal-card'),
-    startDecisionBtn: document.getElementById('start-decision'),
-    timerBar: document.getElementById('timer-bar'),
-    timerText: document.getElementById('timer-text'),
-    cavePath: document.getElementById('cave-path'),
-    playersContainer: document.getElementById('players-container'),
-    logContainer: document.getElementById('log-container'),
-    gameMessage: document.getElementById('game-message'),
-    currentRound: document.getElementById('current-round'),
-    playerCount: document.getElementById('player-count'),
-    activePlayers: document.getElementById('active-players'),
-};
+// DOM elements map for quick access - initialize as empty objects
+const elementsMap = {};
 
 // Templates
-const cardTemplate = document.getElementById('card-template');
-const playerTemplate = document.getElementById('player-template');
+let cardTemplate;
+let playerTemplate;
 
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize DOM element references
+    elementsMap.startGameBtn = document.getElementById('start-game');
+    elementsMap.revealCardBtn = document.getElementById('reveal-card');
+    elementsMap.timerBar = document.getElementById('timer-bar');
+    elementsMap.timerText = document.getElementById('timer-text');
+    elementsMap.cavePath = document.getElementById('cave-path');
+    elementsMap.playersContainer = document.getElementById('players-container');
+    elementsMap.logContainer = document.getElementById('log-container');
+    elementsMap.gameMessage = document.getElementById('game-message');
+    elementsMap.currentRound = document.getElementById('current-round');
+    elementsMap.playerCount = document.getElementById('player-count');
+    elementsMap.activePlayers = document.getElementById('active-players');
+    
+    // Initialize templates
+    cardTemplate = document.getElementById('card-template');
+    playerTemplate = document.getElementById('player-template');
+    
+    // Verify all elements were found
+    console.log("DOM Elements initialized:", elementsMap);
+    
     // Set up event listeners
-    elementsMap.startGameBtn.addEventListener('click', showPlayerLimitPrompt);
-    elementsMap.revealCardBtn.addEventListener('click', revealNextCard);
-    elementsMap.startDecisionBtn.addEventListener('click', startDecisionPhase);
+    if (elementsMap.startGameBtn) {
+        elementsMap.startGameBtn.addEventListener('click', showPlayerLimitPrompt);
+    } else {
+        console.error("Start game button not found!");
+    }
+    
+    if (elementsMap.revealCardBtn) {
+        elementsMap.revealCardBtn.addEventListener('click', revealNextCard);
+    } else {
+        console.error("Reveal card button not found!");
+    }
     
     // Set up socket connection for chat messages
     const socket = io();
@@ -161,18 +176,17 @@ function startGame() {
     gameState.treasureValues = [];
     gameState.players = {};
     
-    // Update UI
-    elementsMap.currentRound.textContent = gameState.currentRound;
-    elementsMap.playerCount.textContent = '0';
-    elementsMap.activePlayers.textContent = '0';
-    elementsMap.cavePath.innerHTML = '';
-    elementsMap.playersContainer.innerHTML = '';
-    elementsMap.logContainer.innerHTML = '';
+    // Update UI safely
+    if (elementsMap.currentRound) elementsMap.currentRound.textContent = gameState.currentRound;
+    if (elementsMap.playerCount) elementsMap.playerCount.textContent = '0';
+    if (elementsMap.activePlayers) elementsMap.activePlayers.textContent = '0';
+    if (elementsMap.cavePath) elementsMap.cavePath.innerHTML = '';
+    if (elementsMap.playersContainer) elementsMap.playersContainer.innerHTML = '';
+    if (elementsMap.logContainer) elementsMap.logContainer.innerHTML = '';
     
     // Disable controls during joining phase
-    elementsMap.startGameBtn.disabled = true;
-    elementsMap.revealCardBtn.disabled = true;
-    elementsMap.startDecisionBtn.disabled = true;
+    if (elementsMap.startGameBtn) elementsMap.startGameBtn.disabled = true;
+    if (elementsMap.revealCardBtn) elementsMap.revealCardBtn.disabled = true;
     
     // Start join timer
     const limitMessage = gameState.playerLimit > 0 ? 
@@ -188,17 +202,55 @@ function startGame() {
         addLogEntry('No player limit set - unlimited players can join.', 'highlight');
     }
     
-    startTimer(config.joinTime, () => {
-        if (Object.keys(gameState.players).length > 0) {
-            // Start the first round (deck will be created in startNextRound)
-            startNextRound();
-        } else {
-            gameState.phase = 'waiting';
-            gameState.isActive = false;
-            updateGameMessage('No players joined. Game canceled.');
-            elementsMap.startGameBtn.disabled = false;
+    // Clear any existing timer
+    if (gameState.timer) {
+        clearInterval(gameState.timer);
+        gameState.timer = null;
+    }
+    
+    // Start join timer with visual feedback
+    gameState.timerDuration = config.joinTime;
+    gameState.timerRemaining = config.joinTime;
+    
+    // Update timer display safely
+    const timerDisplay = elementsMap.timerText;
+    const timerBar = elementsMap.timerBar;
+    
+    if (timerDisplay) timerDisplay.textContent = `${gameState.timerRemaining}s`;
+    if (timerBar) timerBar.style.transform = 'scaleX(1)';
+    
+    // Start the timer
+    gameState.timer = setInterval(() => {
+        gameState.timerRemaining--;
+        
+        // Update timer display safely
+        if (timerDisplay) timerDisplay.textContent = `${gameState.timerRemaining}s`;
+        if (timerBar) timerBar.style.transform = `scaleX(${gameState.timerRemaining / gameState.timerDuration})`;
+        
+        // Log the time every 5 seconds
+        if (gameState.timerRemaining % 5 === 0 || gameState.timerRemaining <= 3) {
+            console.log(`Join timer: ${gameState.timerRemaining}s remaining`);
         }
-    });
+        
+        if (gameState.timerRemaining <= 0) {
+            clearInterval(gameState.timer);
+            gameState.timer = null;
+            
+            console.log("Join timer ended, checking player count");
+            
+            if (Object.keys(gameState.players).length > 0) {
+                console.log(`Starting first round with ${Object.keys(gameState.players).length} players`);
+                // Start the first round (deck will be created in startNextRound)
+                startNextRound();
+            } else {
+                console.log("No players joined, canceling game");
+                gameState.phase = 'waiting';
+                gameState.isActive = false;
+                updateGameMessage('No players joined. Game canceled.');
+                if (elementsMap.startGameBtn) elementsMap.startGameBtn.disabled = false;
+            }
+        }
+    }, 1000);
 }
 
 /**
@@ -211,8 +263,11 @@ function createDeck() {
     const playerCount = Object.keys(gameState.players).length;
     
     // Calculate min and max treasure values
-    const minTreasure = Math.max(1, Math.floor(playerCount * config.minTreasureScale));
-    const maxTreasure = Math.max(5, Math.floor(playerCount * config.maxTreasureScale));
+    // Min = 100% of player count, Max = 400% of player count
+    const minTreasure = Math.max(1, playerCount);
+    const maxTreasure = Math.max(5, playerCount * 4);
+    
+    console.log(`Treasure value range: ${minTreasure} (min) to ${maxTreasure} (max) based on ${playerCount} players`);
     
     // Generate treasure values if not already generated
     if (gameState.treasureValues.length === 0) {
@@ -278,9 +333,15 @@ function revealNextCard() {
         return;
     }
     
-    // Disable controls during card reveal
-    elementsMap.revealCardBtn.disabled = true;
-    elementsMap.startDecisionBtn.disabled = true;
+    // Disable reveal card button during card reveal
+    if (elementsMap.revealCardBtn) {
+        elementsMap.revealCardBtn.disabled = true;
+        
+        // Change button text to "Reveal Next Card" after first card
+        if (gameState.currentPath.length === 0) {
+            elementsMap.revealCardBtn.textContent = 'Reveal Next Card';
+        }
+    }
     
     // Reveal the next card
     const card = gameState.deck.pop();
@@ -288,10 +349,15 @@ function revealNextCard() {
     
     // Create and add the card element to the path
     const cardElement = createCardElement(card);
-    elementsMap.cavePath.appendChild(cardElement);
+    if (elementsMap.cavePath) {
+        elementsMap.cavePath.appendChild(cardElement);
+    }
     
     // Process the card effects
     processCardEffects(card);
+    
+    // Start decision phase automatically after revealing a card
+    startDecisionPhase();
 }
 
 /**
@@ -332,9 +398,6 @@ function processCardEffects(card) {
             card.originalValue = card.value;
             addLogEntry(`Revealed: ${card.value} rubies!`, 'success');
         }
-        
-        // Enable decision phase button
-        elementsMap.startDecisionBtn.disabled = false;
     } else if (card.type === 'trap') {
         // Count this trap type
         gameState.revealedTraps[card.trapType] = (gameState.revealedTraps[card.trapType] || 0) + 1;
@@ -347,22 +410,17 @@ function processCardEffects(card) {
             setTimeout(() => {
                 handleTrapSpring(card.trapType);
             }, 1500);
+            return; // Exit early as trap handling will take over
         } else {
             addLogEntry(`Revealed: A ${card.trapType} trap! Be careful...`, 'warning');
-            
-            // Enable decision phase button
-            elementsMap.startDecisionBtn.disabled = false;
         }
     } else if (card.type === 'relic') {
         addLogEntry(`Revealed: A rare relic worth ${card.value} rubies!`, 'highlight');
         gameState.treasureOnPath += card.value;
-        
-        // Enable decision phase button
-        elementsMap.startDecisionBtn.disabled = false;
     }
     
     // Update game message
-    updateGameMessage(`Card revealed: ${getCardDescription(card)}`);
+    updateGameMessage(`Card revealed: ${getCardDescription(card)}. You have 15 seconds to type !roach to leave the cave.`);
 }
 
 /**
@@ -383,17 +441,19 @@ function startDecisionPhase() {
     
     gameState.phase = 'deciding';
     
-    // Disable controls during decision phase
-    elementsMap.revealCardBtn.disabled = true;
-    elementsMap.startDecisionBtn.disabled = true;
+    addLogEntry("Decision time! Type !roach to leave with your treasures, or wait to continue exploring.", 'highlight');
     
-    updateGameMessage("Decision time! Type !roach to leave with your treasures, or do nothing to continue exploring.");
-    addLogEntry("Decision time! Type !roach to leave with your treasures, or do nothing to continue exploring.", 'highlight');
-    
-    // Start timer for decision phase
+    // Start timer for decision phase (15 seconds)
     startTimer(config.decisionTime, () => {
         if (gameState.phase === 'deciding') {
             processDecisions();
+            
+            // Automatically reveal the next card after processing decisions
+            if (gameState.phase === 'revealing') {
+                setTimeout(() => {
+                    revealNextCard();
+                }, 1500);
+            }
         }
     });
 }
@@ -488,39 +548,25 @@ function processDecisions() {
         
         // Update active players count
         elementsMap.activePlayers.textContent = Object.values(gameState.players).filter(p => p.inCave).length;
-        
-        // Check if anyone is still in the cave after players have left
-        const remainingPlayers = Object.values(gameState.players).filter(p => p.inCave);
-        console.log("Remaining players after exits:", remainingPlayers.length);
-        
-        if (remainingPlayers.length === 0) {
-            startNextRound();
-        } else {
-            // Continue the game with the next card
-            gameState.phase = 'revealing';
-            elementsMap.revealCardBtn.disabled = false;
-            updateGameMessage("Ready to reveal the next card.");
+    }
+    
+    // Reset decisions for continuing players
+    Object.values(gameState.players).forEach(player => {
+        if (player.inCave) {
+            delete player.decision;
         }
+    });
+    
+    // Check if anyone is still in the cave
+    const remainingPlayers = Object.values(gameState.players).filter(p => p.inCave);
+    console.log("Remaining players after decisions:", remainingPlayers.length);
+    
+    if (remainingPlayers.length === 0) {
+        startNextRound();
     } else {
-        // Reset decisions for continuing players
-        Object.values(gameState.players).forEach(player => {
-            if (player.inCave) {
-                delete player.decision;
-            }
-        });
-        
-        // Check if anyone is still in the cave
-        const remainingPlayers = Object.values(gameState.players).filter(p => p.inCave);
-        console.log("Remaining players (no exits):", remainingPlayers.length);
-        
-        if (remainingPlayers.length === 0) {
-            startNextRound();
-        } else {
-            // Continue with next card
-            gameState.phase = 'revealing';
-            elementsMap.revealCardBtn.disabled = false;
-            updateGameMessage("All players continue exploring. Ready to reveal the next card.");
-        }
+        // Continue with next card
+        gameState.phase = 'revealing';
+        updateGameMessage("Continuing to the next card...");
     }
 }
 
@@ -541,8 +587,10 @@ function handleTrapSpring(trapType) {
         }
     });
     
-    // Update active players count
-    elementsMap.activePlayers.textContent = '0';
+    // Update active players count safely
+    if (elementsMap.activePlayers) {
+        elementsMap.activePlayers.textContent = '0';
+    }
     
     // Start next round after a delay
     setTimeout(() => {
@@ -564,7 +612,7 @@ function startNextRound() {
     
     // Increment round counter
     gameState.currentRound++;
-    elementsMap.currentRound.textContent = gameState.currentRound;
+    if (elementsMap.currentRound) elementsMap.currentRound.textContent = gameState.currentRound;
     
     // Reset path and traps for the new round
     gameState.currentPath = [];
@@ -572,11 +620,19 @@ function startNextRound() {
     gameState.treasureOnPath = 0;
     
     // Clear the cave path display
-    elementsMap.cavePath.innerHTML = '';
+    if (elementsMap.cavePath) elementsMap.cavePath.innerHTML = '';
     
     // Create a new deck for each round to ensure traps can appear again
     gameState.deck = createDeck();
     console.log(`Created new deck with ${gameState.deck.length} cards for round ${gameState.currentRound}`);
+    
+    // Display treasure value range in the first round
+    if (gameState.currentRound === 1) {
+        const playerCount = Object.keys(gameState.players).length;
+        const minTreasure = Math.max(1, playerCount);
+        const maxTreasure = Math.max(5, playerCount * 4);
+        addLogEntry(`Treasure values range from ${minTreasure} to ${maxTreasure} gold based on ${playerCount} players.`, 'highlight');
+    }
     
     // Reset all players to be in the cave at the start of the round
     Object.values(gameState.players).forEach(player => {
@@ -587,14 +643,19 @@ function startNextRound() {
     });
     
     // Update active players count
-    elementsMap.activePlayers.textContent = Object.keys(gameState.players).length;
+    if (elementsMap.activePlayers) {
+        elementsMap.activePlayers.textContent = Object.keys(gameState.players).length;
+    }
     
     gameState.phase = 'revealing';
     addLogEntry(`Round ${gameState.currentRound} begins! Everyone enters the cave...`, 'highlight');
     updateGameMessage(`Round ${gameState.currentRound} begins! Ready to reveal the first card.`);
     
-    // Enable reveal card button
-    elementsMap.revealCardBtn.disabled = false;
+    // Reset the reveal card button text and enable it
+    if (elementsMap.revealCardBtn) {
+        elementsMap.revealCardBtn.textContent = 'Reveal First Card';
+        elementsMap.revealCardBtn.disabled = false;
+    }
 }
 
 /**
@@ -626,7 +687,6 @@ function endGame(message) {
     // Enable start game button
     elementsMap.startGameBtn.disabled = false;
     elementsMap.revealCardBtn.disabled = true;
-    elementsMap.startDecisionBtn.disabled = true;
 }
 
 /**
@@ -706,6 +766,11 @@ function playerDecision(username, decision) {
  * Create a card element from a card object
  */
 function createCardElement(card) {
+    if (!cardTemplate) {
+        console.error("Card template not found!");
+        return document.createElement('div'); // Return empty div as fallback
+    }
+    
     const clone = cardTemplate.content.cloneNode(true);
     const cardElement = clone.querySelector('.card');
     
@@ -718,14 +783,14 @@ function createCardElement(card) {
     const valueElement = cardElement.querySelector('.card-value');
     
     if (card.type === 'treasure') {
-        titleElement.textContent = 'Treasure';
-        valueElement.textContent = card.value;
+        if (titleElement) titleElement.textContent = 'Treasure';
+        if (valueElement) valueElement.textContent = card.value;
     } else if (card.type === 'trap') {
-        titleElement.textContent = `${card.trapType.charAt(0).toUpperCase() + card.trapType.slice(1)} Trap`;
+        if (titleElement) titleElement.textContent = `${card.trapType.charAt(0).toUpperCase() + card.trapType.slice(1)} Trap`;
         cardElement.classList.add(`trap-${card.trapType}`);
     } else if (card.type === 'relic') {
-        titleElement.textContent = 'Relic';
-        valueElement.textContent = card.value;
+        if (titleElement) titleElement.textContent = 'Relic';
+        if (valueElement) valueElement.textContent = card.value;
     }
     
     return cardElement;
@@ -735,6 +800,11 @@ function createCardElement(card) {
  * Create a player element from a player object
  */
 function createPlayerElement(player) {
+    if (!playerTemplate) {
+        console.error("Player template not found!");
+        return document.createElement('div'); // Return empty div as fallback
+    }
+    
     const clone = playerTemplate.content.cloneNode(true);
     const playerElement = clone.querySelector('.player');
     
@@ -742,17 +812,26 @@ function createPlayerElement(player) {
     playerElement.dataset.username = player.username;
     
     // Set player content
-    playerElement.querySelector('.player-name').textContent = player.username;
-    playerElement.querySelector('.player-status').textContent = player.status === 'in' ? 'In Cave' : 
-                                                               player.status === 'exited' ? 'Exited' : 'Out';
-    playerElement.querySelector('.player-holding').textContent = player.holding || 0;
-    playerElement.querySelector('.player-chest').textContent = player.chest || 0;
+    const nameElement = playerElement.querySelector('.player-name');
+    const statusElement = playerElement.querySelector('.player-status');
+    const holdingElement = playerElement.querySelector('.player-holding');
+    const chestElement = playerElement.querySelector('.player-chest');
+    
+    if (nameElement) nameElement.textContent = player.username;
+    if (statusElement) {
+        statusElement.textContent = player.status === 'in' ? 'In Cave' : 
+                                   player.status === 'exited' ? 'Exited' : 'Out';
+    }
+    if (holdingElement) holdingElement.textContent = player.holding || 0;
+    if (chestElement) chestElement.textContent = player.chest || 0;
     
     // Add status class
-    if (player.status === 'exited') {
-        playerElement.querySelector('.player-status').classList.add('exited');
-    } else if (player.status === 'out') {
-        playerElement.querySelector('.player-status').classList.add('out');
+    if (statusElement) {
+        if (player.status === 'exited') {
+            statusElement.classList.add('exited');
+        } else if (player.status === 'out') {
+            statusElement.classList.add('out');
+        }
     }
     
     return playerElement;
@@ -762,76 +841,116 @@ function createPlayerElement(player) {
  * Update a player element with new data
  */
 function updatePlayerElement(player) {
+    if (!elementsMap.playersContainer) {
+        console.error("Players container not found!");
+        return;
+    }
+    
     const playerElement = elementsMap.playersContainer.querySelector(`.player[data-username="${player.username}"]`);
     
-    if (!playerElement) return;
+    if (!playerElement) {
+        console.log(`Player element for ${player.username} not found, creating new element`);
+        const newPlayerElement = createPlayerElement(player);
+        elementsMap.playersContainer.appendChild(newPlayerElement);
+        return;
+    }
     
     // Update player content
-    playerElement.querySelector('.player-status').textContent = player.inCave ? 'In Cave' : 
-                                                               player.status === 'exited' ? 'Exited' : 'Out';
-    playerElement.querySelector('.player-holding').textContent = player.holding || 0;
-    playerElement.querySelector('.player-chest').textContent = player.chest || 0;
-    
-    // Update status class
     const statusElement = playerElement.querySelector('.player-status');
-    statusElement.classList.remove('exited', 'out');
+    const holdingElement = playerElement.querySelector('.player-holding');
+    const chestElement = playerElement.querySelector('.player-chest');
     
-    if (player.status === 'exited') {
-        statusElement.classList.add('exited');
-    } else if (player.status === 'out') {
-        statusElement.classList.add('out');
+    if (statusElement) {
+        statusElement.textContent = player.inCave ? 'In Cave' : 
+                                   player.status === 'exited' ? 'Exited' : 'Out';
+        
+        // Update status class
+        statusElement.classList.remove('exited', 'out');
+        
+        if (player.status === 'exited') {
+            statusElement.classList.add('exited');
+        } else if (player.status === 'out') {
+            statusElement.classList.add('out');
+        }
     }
+    
+    if (holdingElement) holdingElement.textContent = player.holding || 0;
+    if (chestElement) chestElement.textContent = player.chest || 0;
 }
 
 /**
  * Add an entry to the game log
  */
 function addLogEntry(message, className = '') {
+    console.log(`[GAME LOG] ${message}`);
+    
+    if (!elementsMap.logContainer) {
+        console.error("Log container not found!");
+        return;
+    }
+    
     const logEntry = document.createElement('div');
     logEntry.className = `log-entry ${className}`;
     logEntry.textContent = message;
     
     elementsMap.logContainer.appendChild(logEntry);
     elementsMap.logContainer.scrollTop = elementsMap.logContainer.scrollHeight;
-    
-    // Also log to console
-    console.log(`[GAME LOG] ${message}`);
 }
 
 /**
  * Update the game message display
  */
 function updateGameMessage(message) {
+    console.log(`[GAME MESSAGE] ${message}`);
+    
+    if (!elementsMap.gameMessage) {
+        console.error("Game message element not found!");
+        return;
+    }
+    
     elementsMap.gameMessage.textContent = message;
 }
 
 /**
- * Start a timer for a specific duration
+ * Start timer for a specific duration
  */
 function startTimer(seconds, callback) {
+    console.log(`Starting timer for ${seconds} seconds`);
+    
     // Clear any existing timer
     if (gameState.timer) {
         clearInterval(gameState.timer);
+        gameState.timer = null;
     }
     
     // Set up timer state
     gameState.timerRemaining = seconds;
     gameState.timerDuration = seconds;
     
-    // Update timer display
-    elementsMap.timerText.textContent = `${seconds}s`;
-    elementsMap.timerBar.style.transform = 'scaleX(1)';
+    // Update timer display safely
+    const timerDisplay = elementsMap.timerText;
+    const timerBar = elementsMap.timerBar;
+    
+    if (timerDisplay) timerDisplay.textContent = `${seconds}s`;
+    if (timerBar) timerBar.style.transform = 'scaleX(1)';
     
     // Start the timer
     gameState.timer = setInterval(() => {
         gameState.timerRemaining--;
         
-        // Update timer display
-        elementsMap.timerText.textContent = `${gameState.timerRemaining}s`;
-        elementsMap.timerBar.style.transform = `scaleX(${gameState.timerRemaining / gameState.timerDuration})`;
+        // Update timer display safely
+        if (timerDisplay) timerDisplay.textContent = `${gameState.timerRemaining}s`;
+        if (timerBar) timerBar.style.transform = `scaleX(${gameState.timerRemaining / gameState.timerDuration})`;
+        
+        // Log the time every 5 seconds or in the last 3 seconds
+        if (gameState.timerRemaining % 5 === 0 || gameState.timerRemaining <= 3) {
+            console.log(`Timer: ${gameState.timerRemaining}s remaining`);
+        }
         
         if (gameState.timerRemaining <= 0) {
+            console.log("Timer ended, executing callback");
             clearInterval(gameState.timer);
+            gameState.timer = null;
             callback();
         }
     }, 1000);

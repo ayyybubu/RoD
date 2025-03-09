@@ -6,10 +6,15 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     background-color: #121212;
     color: #e0e0e0;
-    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,11 +24,10 @@ body {
     display: grid;
     grid-template-rows: auto 1fr auto;
     width: 100%;
-    max-width: 1200px;
     height: 100vh;
-    max-height: 900px;
     padding: 20px;
     gap: 20px;
+    overflow: hidden;
 }
 
 /* Header Section */
@@ -48,6 +52,7 @@ body {
     gap: 20px;
     height: 100%;
     overflow: hidden;
+    min-height: 0; /* Important for nested scrolling */
 }
 
 /* Cave Path */
@@ -67,14 +72,18 @@ body {
 .card {
     width: 120px;
     height: 180px;
-    background-color: #2a2a2a;
+    margin: 10px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s;
-    overflow: hidden;
     display: flex;
-    flex-direction: column;
-    animation: cardReveal 0.5s ease-out;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: cardReveal 0.5s ease-out forwards;
+    transform: scale(0);
+    overflow: hidden;
 }
 
 .card:hover {
@@ -135,6 +144,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    height: 100%;
+    overflow: hidden;
 }
 
 .streamer-controls {
@@ -151,11 +162,16 @@ body {
     border-radius: 10px;
     padding: 15px;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .game-message {
     margin-top: 10px;
     line-height: 1.5;
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
 /* Buttons */
@@ -220,6 +236,8 @@ button:disabled {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    height: 250px;
+    min-height: 250px;
 }
 
 .player-list, .game-log {
@@ -228,7 +246,8 @@ button:disabled {
     padding: 15px;
     display: flex;
     flex-direction: column;
-    height: 250px;
+    height: 100%;
+    overflow: hidden;
 }
 
 #players-container {
@@ -238,6 +257,7 @@ button:disabled {
     overflow-y: auto;
     margin-top: 10px;
     height: 100%;
+    flex-grow: 1;
 }
 
 .player {
@@ -282,6 +302,7 @@ button:disabled {
     height: 100%;
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
 }
 
 .log-entry {
@@ -322,5 +343,85 @@ button:disabled {
     }
     100% {
         transform: scale(1) rotate(0);
+    }
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #fff;
+    text-align: center;
+}
+
+.modal-content p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background-color: #2a2a2a;
+    color: #fff;
+    font-size: 16px;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: #0066cc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .main-area {
+        grid-template-columns: 1fr 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    .game-container {
+        grid-template-rows: auto 1fr auto;
+        height: 100vh;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .main-area {
+        grid-template-columns: 1fr;
+    }
+    
+    .bottom-area {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .player-list, .game-log {
+        height: 200px;
     }
 }
